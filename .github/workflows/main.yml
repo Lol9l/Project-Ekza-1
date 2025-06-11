@@ -1,28 +1,35 @@
-name: Build and Deploy Docs
+name: .NET WPF Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - run: pip install sphinx
-      - run: sphinx-build -b html docs/ docs/_build
+    runs-on: windows-latest
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_build
+          dotnet-version: '6.0.x' # или '7.0.x', если используется
+
+      - name: Restore dependencies
+        run: dotnet restore "Проект Экзамен/Travel-Company.WPF.sln"
+
+      - name: Build solution
+        run: dotnet build "Проект Экзамен/Travel-Company.WPF.sln" --configuration Release
+
+      - name: Publish build artifacts
+        run: dotnet publish "Проект Экзамен/Travel-Company.WPF.sln" -c Release -o ./publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WPF-App
+          path: ./publish
